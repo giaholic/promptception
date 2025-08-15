@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element db_object_id="3fb9c08f4753e650ddc46042d16d438c" label="Prompt" max_length="40" name="x_885412_promptc_0_prompt" type="collection">
         <element choice="1" default="new" label="State" max_length="40" name="state" type="choice">
-            <choice/>
+            <choice>
+                <element inactive_on_update="false" label="New" value="new"/>
+                <element inactive_on_update="false" label="New" sequence="100" value="new"/>
+                <element inactive_on_update="false" label="In Progress" sequence="200" value="in progress"/>
+                <element inactive_on_update="false" label="In Progress" sequence="1" value="in progress"/>
+                <element inactive_on_update="false" label="Complete" sequence="2" value="complete"/>
+                <element inactive_on_update="false" label="New" sequence="0" value="new"/>
+                <element inactive_on_update="false" label="New" sequence="100" value="new"/>
+                <element inactive_on_update="false" label="Complete" sequence="300" value="complete"/>
+                <element inactive_on_update="false" label="New" sequence="100" value="new"/>
+            </choice>
         </element>
+        <element default="true" label="Display on portal" max_length="40" name="display_on_portal" type="boolean"/>
         <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
         <element label="Expanded prompt" max_length="4000" name="expanded_prompt" type="string"/>
         <element label="Submitter" max_length="32" name="submitter" reference="sys_user" type="reference"/>
         <element label="User input" max_length="256" name="user_input" type="string"/>
-        <element default="true" label="Display on portal" name="display_on_portal" type="boolean"/>
         <index name="index">
             <element name="submitter"/>
         </index>
