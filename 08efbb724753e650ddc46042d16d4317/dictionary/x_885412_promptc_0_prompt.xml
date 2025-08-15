@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="3fb9c08f4753e650ddc46042d16d438c" label="Prompt" max_length="40" name="x_885412_promptc_0_prompt" type="collection">
+        <element choice="1" default="new" label="State" max_length="40" name="state" type="choice">
+            <choice/>
+        </element>
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element label="Expanded prompt" max_length="4000" name="expanded_prompt" type="string"/>
+        <element label="Submitter" max_length="32" name="submitter" reference="sys_user" type="reference"/>
+        <element label="User input" max_length="256" name="user_input" type="string"/>
+        <index name="index">
+            <element name="submitter"/>
+        </index>
+    </element>
+</database>
