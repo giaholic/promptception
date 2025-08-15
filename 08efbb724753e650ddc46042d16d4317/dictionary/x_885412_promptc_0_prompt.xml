@@ -7,6 +7,7 @@
         <element label="Expanded prompt" max_length="4000" name="expanded_prompt" type="string"/>
         <element label="Submitter" max_length="32" name="submitter" reference="sys_user" type="reference"/>
         <element label="User input" max_length="256" name="user_input" type="string"/>
+        <element default="true" label="Display on portal" name="display_on_portal" type="boolean"/>
         <index name="index">
             <element name="submitter"/>
         </index>
