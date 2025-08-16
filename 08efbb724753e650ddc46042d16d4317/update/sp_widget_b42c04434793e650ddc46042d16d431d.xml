@@ -35,14 +35,24 @@
       action: 'createPrompt',
       userInput: c.userInput.trim()
     }).then(function(response) {
-      if (response.data.success) {
+      // Debug: Log the response to understand the structure
+      console.log('Server response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response || {}));
+      
+      // In ServiceNow, the response structure might be different
+      // Check if response.data exists, otherwise use response directly
+      var responseData = response.data || response;
+      
+      if (responseData && responseData.success) {
         // Redirect to the list page
         $location.url('/sp/?id=promptception_list');
       } else {
-        c.errorMessage = response.data.error || 'An error occurred while creating the prompt.';
+        c.errorMessage = (responseData && responseData.error) || 'An error occurred while creating the prompt.';
         c.isSubmitting = false;
       }
     }).catch(function(error) {
+      console.log('Server error:', error);
       c.errorMessage = 'An error occurred while creating the prompt.';
       c.isSubmitting = false;
     });
