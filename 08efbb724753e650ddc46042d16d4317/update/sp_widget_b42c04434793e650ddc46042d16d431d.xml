@@ -31,7 +31,7 @@
     c.isSubmitting = true;
     c.errorMessage = '';
     
-    c.server.post({
+    c.server.update({
       action: 'createPrompt',
       userInput: c.userInput.trim()
     }).then(function(response) {
