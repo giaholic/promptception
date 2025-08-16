@@ -1,12 +1,183 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller=function() {  /* widget controller */  var c = this;};]]></client_script>
+        <client_script><![CDATA[api.controller=function() {
+  /* widget controller */
+  var c = this;
+  
+  c.userInput = '';
+  c.submitter = '';
+  c.isSubmitting = false;
+  c.errorMessage = '';
+  
+  c.$onInit = function() {
+    c.loadCurrentUser();
+  };
+  
+  c.loadCurrentUser = function() {
+    c.server.get({
+      action: 'getCurrentUser'
+    }).then(function(response) {
+      c.submitter = response.data.submitter || '';
+    });
+  };
+  
+  c.submitPrompt = function() {
+    if (!c.userInput || c.userInput.trim() === '') {
+      c.errorMessage = 'Please enter your prompt text.';
+      return;
+    }
+    
+    c.isSubmitting = true;
+    c.errorMessage = '';
+    
+    c.server.post({
+      action: 'createPrompt',
+      userInput: c.userInput.trim()
+    }).then(function(response) {
+      if (response.data.success) {
+        // Redirect to the list page
+        $location.url('/sp/?id=promptception_list');
+      } else {
+        c.errorMessage = response.data.error || 'An error occurred while creating the prompt.';
+        c.isSubmitting = false;
+      }
+    }).catch(function(error) {
+      c.errorMessage = 'An error occurred while creating the prompt.';
+      c.isSubmitting = false;
+    });
+  };
+  
+  c.clearError = function() {
+    c.errorMessage = '';
+  };
+};]]></client_script>
         <controller_as>c</controller_as>
-        <css/>
+        <css><![CDATA[.prompt-input-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.prompt-form {
+  background: #fff;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c5aa0;
+  margin-bottom: 8px;
+}
+
+.form-subtitle {
+  color: #666;
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e1e8ed;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2c5aa0;
+}
+
+.form-input.readonly {
+  background-color: #f8f9fa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.submitter-display {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+  color: #666;
+  font-size: 14px;
+}
+
+.submit-button {
+  background: #2c5aa0;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #1e3f6b;
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #feb2b2;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.error-message .fa {
+  margin-right: 8px;
+}
+
+.character-count {
+  text-align: right;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.character-count.near-limit {
+  color: #f39c12;
+}
+
+.character-count.at-limit {
+  color: #e74c3c;
+}]]></css>
         <data_table>sp_instance</data_table>
         <demo_data/>
-        <description/>
+        <description>Input form for creating new prompts in the Promptception system</description>
         <docs/>
         <field_list/>
         <has_preview>false</has_preview>
@@ -17,13 +188,56 @@
         <option_schema/>
         <public>false</public>
         <roles/>
-        <script><![CDATA[(function() {  /* populate the 'data' object */  /* e.g., data.table = $sp.getValue('table'); */})();]]></script>
+        <script><![CDATA[(function() {
+  /* populate the 'data' object */
+  /* e.g., data.table = $sp.getValue('table'); */
+  
+  if (input && input.action === 'getCurrentUser') {
+    // Get current user information
+    var currentUser = gs.getUser();
+    data.submitter = currentUser.getDisplayName();
+  }
+  
+  if (input && input.action === 'createPrompt') {
+    try {
+      // Validate input
+      if (!input.userInput || input.userInput.trim() === '') {
+        data.success = false;
+        data.error = 'User input is required.';
+        return;
+      }
+      
+      // Create new prompt record
+      var gr = new GlideRecord('x_885412_promptc_0_prompt');
+      gr.initialize();
+      gr.setValue('user_input', input.userInput.trim());
+      gr.setValue('submitter', gs.getUserID()); // Set current user's sys_id
+      gr.setValue('display_on_portal', true);
+      gr.setValue('state', 'new');
+      
+      var promptId = gr.insert();
+      
+      if (promptId) {
+        data.success = true;
+        data.promptId = promptId;
+      } else {
+        data.success = false;
+        data.error = 'Failed to create prompt record.';
+      }
+      
+    } catch (e) {
+      gs.error('Error creating prompt: ' + e.message);
+      data.success = false;
+      data.error = 'An error occurred while creating the prompt.';
+    }
+  }
+})();]]></script>
         <servicenow>false</servicenow>
         <sys_class_name>sp_widget</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-15 18:48:51</sys_created_on>
         <sys_id>b42c04434793e650ddc46042d16d431d</sys_id>
-        <sys_mod_count>0</sys_mod_count>
+        <sys_mod_count>1</sys_mod_count>
         <sys_name>Promptception Input</sys_name>
         <sys_package display_value="Promptception" source="x_885412_promptc_0">08efbb724753e650ddc46042d16d4317</sys_package>
         <sys_policy/>
@@ -31,14 +245,71 @@
         <sys_update_name>sp_widget_b42c04434793e650ddc46042d16d431d</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2025-08-15 18:48:51</sys_updated_on>
-        <template><![CDATA[<div><!-- your widget template --></div>]]></template>
+        <template><![CDATA[<div class="prompt-input-container">
+  <div class="prompt-form">
+    <div class="form-header">
+      <h2 class="form-title">Submit New Prompt</h2>
+      <p class="form-subtitle">Enter your prompt below and it will be processed by our system.</p>
+    </div>
+    
+    <div ng-if="c.errorMessage" class="error-message">
+      <i class="fa fa-exclamation-triangle"></i>
+      {{c.errorMessage}}
+    </div>
+    
+    <form ng-submit="c.submitPrompt()" novalidate>
+      <div class="form-group">
+        <label for="userInput" class="form-label">Your Prompt *</label>
+        <textarea 
+          id="userInput"
+          class="form-input" 
+          ng-model="c.userInput" 
+          ng-change="c.clearError()"
+          placeholder="Enter your prompt here..."
+          rows="6"
+          maxlength="256"
+          required
+          ng-disabled="c.isSubmitting">
+        </textarea>
+        <div class="character-count" ng-class="{
+          'near-limit': c.userInput.length > 200,
+          'at-limit': c.userInput.length >= 256
+        }">
+          {{c.userInput.length}} / 256 characters
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Submitter</label>
+        <div class="submitter-display">
+          <i class="fa fa-user"></i>
+          {{c.submitter}}
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <button 
+          type="submit" 
+          class="submit-button"
+          ng-disabled="c.isSubmitting || !c.userInput || c.userInput.trim() === ''">
+          <span ng-if="!c.isSubmitting">
+            <i class="fa fa-paper-plane"></i> Submit Prompt
+          </span>
+          <span ng-if="c.isSubmitting">
+            <i class="fa fa-spinner fa-spin"></i> Submitting...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>]]></template>
     </sp_widget>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
-        <id>b42c04434793e650ddc46042d16d431d</id>
+        <id>b42c04434793e650ddc46042d16d43c1</id>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-15 18:48:51</sys_created_on>
         <sys_id>c12c04434793e650ddc46042d16d4321</sys_id>
-        <sys_mod_count>0</sys_mod_count>
+        <sys_mod_count>1</sys_mod_count>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2025-08-15 18:48:51</sys_updated_on>
         <table>sp_widget</table>
