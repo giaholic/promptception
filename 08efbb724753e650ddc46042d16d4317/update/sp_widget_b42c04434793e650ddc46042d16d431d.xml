@@ -230,34 +230,55 @@
         return;
       }
       
-      // Step 3: Initialize GlideRecord for target table only
+      // Step 3: Log debugging information
+      gs.info('Creating prompt - User Input: ' + input.userInput.trim());
+      gs.info('Creating prompt - Current User ID: ' + currentUserId);
+      
+      // Step 4: Check table access permissions
+      var testGr = new GlideRecord('x_885412_promptc_0_prompt');
+      if (!testGr.canCreate()) {
+        data.success = false;
+        data.error = 'You do not have permission to create prompts. Please contact your administrator.';
+        return;
+      }
+      
+      // Step 5: Initialize GlideRecord for target table only
       var gr = new GlideRecord('x_885412_promptc_0_prompt');
       gr.initialize(); // Always initialize before setting fields
       
-      // Step 4: Set only the required fields (no sys_id manipulation)
+      // Step 6: Set only the required fields (no sys_id manipulation)
       gr.setValue('user_input', input.userInput.trim());
       gr.setValue('submitter', currentUserId);
       gr.setValue('display_on_portal', true);
       gr.setValue('state', 'new');
       
-      // Step 5: Insert the record and capture the result
+      // Step 7: Validate field values before insert
+      gs.info('Field values set - user_input: ' + gr.getValue('user_input'));
+      gs.info('Field values set - submitter: ' + gr.getValue('submitter'));
+      gs.info('Field values set - display_on_portal: ' + gr.getValue('display_on_portal'));
+      gs.info('Field values set - state: ' + gr.getValue('state'));
+      
+      // Step 8: Insert the record and capture the result
       var promptId = gr.insert();
       
-      // Step 6: Validate the insert operation
+      // Step 9: Validate the insert operation
       if (promptId) {
         // Success: Record created with auto-generated sys_id
+        gs.info('Prompt created successfully with ID: ' + promptId);
         data.success = true;
         data.promptId = promptId;
         data.message = 'Prompt created successfully with ID: ' + promptId;
       } else {
         // Failure: Insert operation failed
+        gs.error('Failed to create prompt record - insert() returned null/empty');
         data.success = false;
         data.error = 'Failed to create prompt record. Please try again.';
       }
       
     } catch (e) {
-      // Step 7: Comprehensive error handling
+      // Step 10: Comprehensive error handling
       gs.error('Error creating prompt in x_885412_promptc_0_prompt: ' + e.message);
+      gs.error('Error stack trace: ' + e.stack);
       
       // Return user-friendly error message
       data.success = false;
