@@ -203,42 +203,70 @@
   /* e.g., data.table = $sp.getValue('table'); */
   
   if (input && input.action === 'getCurrentUser') {
-    // Get current user information
-    var currentUser = gs.getUser();
-    data.submitter = currentUser.getDisplayName();
+    // Get current user information for display purposes
+    try {
+      var currentUser = gs.getUser();
+      data.submitter = currentUser.getDisplayName();
+    } catch (e) {
+      gs.error('Error getting current user: ' + e.message);
+      data.submitter = 'Unknown User';
+    }
   }
   
   if (input && input.action === 'createPrompt') {
     try {
-      // Validate input
+      // Step 1: Validate input parameters
       if (!input.userInput || input.userInput.trim() === '') {
         data.success = false;
-        data.error = 'User input is required.';
+        data.error = 'User input is required and cannot be empty.';
         return;
       }
       
-      // Create new prompt record
+      // Step 2: Get current user's sys_id for submitter field
+      var currentUserId = gs.getUserID();
+      if (!currentUserId) {
+        data.success = false;
+        data.error = 'Unable to identify current user. Please refresh and try again.';
+        return;
+      }
+      
+      // Step 3: Initialize GlideRecord for target table only
       var gr = new GlideRecord('x_885412_promptc_0_prompt');
-      gr.initialize();
+      gr.initialize(); // Always initialize before setting fields
+      
+      // Step 4: Set only the required fields (no sys_id manipulation)
       gr.setValue('user_input', input.userInput.trim());
-      gr.setValue('submitter', gs.getUserID()); // Set current user's sys_id
+      gr.setValue('submitter', currentUserId);
       gr.setValue('display_on_portal', true);
       gr.setValue('state', 'new');
       
+      // Step 5: Insert the record and capture the result
       var promptId = gr.insert();
       
+      // Step 6: Validate the insert operation
       if (promptId) {
+        // Success: Record created with auto-generated sys_id
         data.success = true;
         data.promptId = promptId;
+        data.message = 'Prompt created successfully with ID: ' + promptId;
       } else {
+        // Failure: Insert operation failed
         data.success = false;
-        data.error = 'Failed to create prompt record.';
+        data.error = 'Failed to create prompt record. Please try again.';
       }
       
     } catch (e) {
-      gs.error('Error creating prompt: ' + e.message);
+      // Step 7: Comprehensive error handling
+      gs.error('Error creating prompt in x_885412_promptc_0_prompt: ' + e.message);
+      
+      // Return user-friendly error message
       data.success = false;
-      data.error = 'An error occurred while creating the prompt.';
+      data.error = 'An error occurred while creating the prompt: ' + e.message;
+      
+      // Log additional context for debugging
+      if (e.javaException) {
+        gs.error('Java Exception: ' + e.javaException.toString());
+      }
     }
   }
 })();]]></script>
